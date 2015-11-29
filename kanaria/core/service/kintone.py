@@ -1,17 +1,137 @@
+# -*- coding: utf-8 -*-
 from kanaria.core.environment import Environment
 from kanaria.core.model import ApplicationIndex
+from kanaria.core.service.brain import Brain
 
 
-def get_application(name):
+def get_application(code):
     db = Environment.get_db()
-    app_index = db.get_collection(ApplicationIndex).find_one({"name": name})
-    app_id = app_index["app_id"]
+    app_index = db.get_collection(ApplicationIndex).find_one({"code": code})
+    app = None
 
-    service = Environment.get_kintone_service()
-    app = service.app(app_id)
+    if app_index:
+        app_id = app_index["app_id"]
+        service = Environment.get_kintone_service()
+        app = service.app(app_id)
+
     return app
 
 
-def get_members_address():
-    # todo: get member's address
-    pass
+def get_member_addresses():
+    service = Environment.get_kintone_service()
+    export_api = service.user_api().for_exporting
+    users = export_api.get_users().users
+
+    addresses = []
+    for u in users:
+        addresses.append(u.email)
+    return addresses
+
+
+def post_letter(letter):
+    app = get_application(Brain.MY_USER_NAME)
+    if not app:
+        app = get_or_create_kanaria()
+
+    return app.create(letter)
+
+
+def get_or_create_kanaria():
+    import os
+    from pykintone.application_settings.administrator import Administrator
+    from pykintone.application_settings.view import View
+    import pykintone.application_settings.form_field as ff
+    from pykintone.structure_field import File
+
+    app = None
+    service = Environment.get_kintone_service()
+
+    # check existence
+    infos = Administrator(service.account).select_app_info(name=Brain.MY_NAME).infos
+    if len(infos) > 0:
+        app = service.app(infos[0].app_id)
+
+    if not app:
+        app_id = ""
+        with Administrator(service.account) as admin:
+            # create application
+            created = admin.create_application(Brain.MY_NAME)
+            app_id = created.app_id
+
+            # update general information
+            icon = File.upload(os.path.join(os.path.dirname(__file__), "./static/icon.png"))
+            admin.general_settings().update({
+                "app": created.app_id,
+                "icon": {
+                    "type": "FILE",
+                    "file": {
+                        "fileKey": icon.file_key
+                    }
+                }
+            })
+
+            # create form
+            fields = [
+                ff.BaseFormField.create("SINGLE_LINE_TEXT", "subject", "Subject"),
+                ff.BaseFormField.create("MULTI_LINE_TEXT", "body", "MessageBody"),
+                ff.BaseFormField.create("SINGLE_LINE_TEXT", "from_address", "From Address"),
+                ff.BaseFormField.create("SINGLE_LINE_TEXT", "to_address", "To Address"),
+                ff.BaseFormField.create("FILE", "attached_files", "Attached Files")
+            ]
+            admin.form().add(fields)
+
+            # create view
+            view = View.create("LetterList", fields)
+            admin.view().update(view)
+
+        app = service.app(app_id)
+
+    if app:
+        # register application to database
+        db = Environment.get_db()
+        app_index = ApplicationIndex(app.app_id, Brain.MY_NAME, Brain.MY_USER_NAME)
+        db.save(app_index)
+
+    return app
+
+
+def create_default_application(name, code):
+    from pykintone.application_settings.administrator import Administrator
+    from pykintone.application_settings.view import View
+    import pykintone.application_settings.form_field as ff
+
+    app = None
+    service = Environment.get_kintone_service()
+
+    with Administrator(service.account) as admin:
+        # create application
+        created = admin.create_application(Brain.MY_NAME)
+
+        # create form
+        fields = [
+            ff.BaseFormField.create("SINGLE_LINE_TEXT", "subject", "件名"),
+            ff.BaseFormField.create("MULTI_LINE_TEXT", "body", "メッセージ"),
+            ff.BaseFormField.create("SINGLE_LINE_TEXT", "from_address", "報告者"),
+            ff.BaseFormField.create("FILE", "attached_files", "添付ファイル")
+        ]
+        admin.form().add(fields)
+
+        # create view
+        view = View.create("一覧", ["subject", "from_address"])
+        admin.view().update(view)
+
+    if app:
+        # register application to database
+        db = Environment.get_db()
+        app_index = ApplicationIndex(app.app_id, name, code)
+        db.save(app_index)
+
+    return app
+
+
+def find_similar_applications(name):
+    from pykintone.application_settings.administrator import Administrator
+    service = Environment.get_kintone_service()
+    infos = Administrator(service.account).select_app_info(name=name).infos
+
+    return infos
