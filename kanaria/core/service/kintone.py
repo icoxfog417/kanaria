@@ -28,15 +28,7 @@ def get_member_addresses():
     return addresses
 
 
-def post_letter(letter):
-    app = get_application(Brain.MY_USER_NAME)
-    if not app:
-        app = get_or_create_kanaria()
-
-    return app.create(letter)
-
-
-def get_or_create_kanaria():
+def get_kanaria(create_if_not_exist=False):
     import os
     from pykintone.application_settings.administrator import Administrator
     from pykintone.application_settings.view import View
@@ -45,13 +37,23 @@ def get_or_create_kanaria():
 
     app = None
     service = Environment.get_kintone_service()
+    def register(a):
+        # register application to database
+        db = Environment.get_db()
+        app_index = ApplicationIndex(a.app_id, Brain.MY_NAME, Brain.MY_USER_NAME)
+        db.save(app_index)
+
+    # get from database
+    app = get_application(Brain.MY_USER_NAME)
 
     # check existence
-    infos = Administrator(service.account).select_app_info(name=Brain.MY_NAME).infos
-    if len(infos) > 0:
-        app = service.app(infos[0].app_id)
-
     if not app:
+        infos = Administrator(service.account).select_app_info(name=Brain.MY_NAME).infos
+        if len(infos) > 0:
+            app = service.app(infos[0].app_id)
+            register(app)
+
+    if not app and create_if_not_exist:
         app_id = ""
         with Administrator(service.account) as admin:
             # create application
@@ -85,12 +87,7 @@ def get_or_create_kanaria():
             admin.view().update(view)
 
         app = service.app(app_id)
-
-    if app:
-        # register application to database
-        db = Environment.get_db()
-        app_index = ApplicationIndex(app.app_id, Brain.MY_NAME, Brain.MY_USER_NAME)
-        db.save(app_index)
+        register(app)
 
     return app
 
