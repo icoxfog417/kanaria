@@ -77,6 +77,13 @@ class Environment(object):
         service = kintoneService(account)
         return service
 
+    @classmethod
+    def get_translator(cls):
+        import pyoxford
+        env = Environment()
+        translator = pyoxford.translator(env.translator_client_id, env.translator_client_secret)
+        return translator
+
     def make_mail_address(self, user_name):
         return "{0}@{1}".format(user_name, self.mail_domain)
 
