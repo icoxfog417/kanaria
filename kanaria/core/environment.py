@@ -19,17 +19,21 @@ class Environment(object):
 
         try:
             if config_file:
+
                 with open(config_file) as cf:
                     import yaml
                     e = yaml.load(cf)
-                    self.kintone_domain = e["domain"]
-                    self.kintone_id = e["login"]["id"]
-                    self.kintone_password = e["login"]["password"]
-                    self.database_uri = e["database_uri"]
-                    self.mail_domain = e["mail"]["domain"]
-                    self.mail_api_key = e["mail"]["api_key"]
-                    self.translator_client_id = e["translator"]["client_id"]
-                    self.translator_client_secret = e["translator"]["client_secret"]
+                    _get = lambda k, d: "" if not d or k not in d else d[k]
+                    yget = lambda k, sk="": _get(k, e) if not sk else _get(sk, _get(k, e))
+
+                    self.kintone_domain = yget("domain")
+                    self.kintone_id = yget("login", "id")
+                    self.kintone_password = yget("login", "password")
+                    self.database_uri = yget("database_uri")
+                    self.mail_domain = yget("mail", "domain")
+                    self.mail_api_key = yget("mail", "api_key")
+                    self.translator_client_id = yget("translator", "client_id")
+                    self.translator_client_secret = yget("translator", "client_secret")
             else:
                 self.kintone_domain = os.environ.get("KINTONE_DOMAIN", "")
                 self.kintone_id = os.environ.get("KINTONE_ID", "")

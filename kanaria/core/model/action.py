@@ -1,4 +1,4 @@
-from kanaria.core.service.mind_types import DecisionType
+from kanaria.core.service.brain.mind_types import DecisionType
 
 
 class Action(object):
