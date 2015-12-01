@@ -2,9 +2,48 @@ import json
 import falcon
 import cgi
 import io
+import os
 import pprint
+import yaml
+
+import sendgrid
 
 from kanaria.core.model.letter import Letter
+
+
+class EmailSender(object):
+
+    def __init__(self):
+        key_id = self.__get_key_id()
+        self.sg = sendgrid.SendGridClient(key_id)
+        self.message = sendgrid.Mail()
+
+    def __get_key_id(self):
+        base_dir = os.path.dirname(__file__)
+        api_key_path = os.path.join(base_dir, 'account.yaml')
+        with open(api_key_path) as f:
+            account = yaml.load(f)
+            return account["api_key"]
+
+    def set_tos(self, *tos):
+        self.message.smtpapi.add_to(list(tos))
+
+    def set_from_address(self, from_address):
+        self.message.set_from(u'送信者名 <' + from_address + '>')
+
+    def set_subject(self, text):
+        self.message.set_subject(text)
+
+    def set_text(self, text):
+        self.message.set_text(text)
+
+    def set_html(self, html_text):
+        self.message.set_html(html_text)
+
+    def send(self):
+        status, msg = self.sg.send(self.message)
+        print(status)
+        print(msg)
 
 
 class HelloResource(object):
@@ -38,16 +77,20 @@ class HelloResource(object):
 
         return email_info
 
+    def send_email(self, subject='', text='', html='', from_address='', to_addresses=()):
+        client = EmailSender()
+        client.set_tos(gi*to_addresses)
+        client.set_from_address(from_address)
+        client.set_subject(subject)
+        client.set_text(text)
+        client.set_html(html)
+        client.send()
+
     def on_post(self, req, resp):
         query = self.__parse_multipart(req)
         email_info = self.__extract_email_info(query)
-        Letter(email_info)
-
-        quote = {
-            'test': 'example',
-        }
-
-        resp.body = json.dumps(quote)
+        letter = Letter(**email_info)
+        self.send_email(subject='test', text='neko', from_address=letter.to_address[0], to_addresses=[letter.from_address])
 
 app = falcon.API()
 app.add_route("/quote", HelloResource())
