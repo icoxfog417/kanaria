@@ -1,20 +1,20 @@
-from kanaria.core.service.brain import Brain
+import kanaria.core.service.brain.interpreter as interpreter
+import kanaria.core.service.brain.decider as decider
+import kanaria.core.service.brain.executor as executor
+from kanaria.core.service.kintone import get_kanaria
 
 
 class Agent(object):
 
     def __init__(self):
-        pass
+        get_kanaria(create_if_not_exist=True)
 
     def accept(self, letter):
-        brain = Brain()
+        order = interpreter.interpret(letter)
+        action = decider.decide(order)
+        result = executor.execute(action)
 
-        order = brain.understand_order(letter)
-        action = brain.decide_action(order)
-
-        if action:
-            action.execute(letter)
-
-        reply = action.make_reply(letter)
+        reply = None
+        if result:
+            reply = result.make_reply()
         return reply
-
