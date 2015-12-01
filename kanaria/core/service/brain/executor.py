@@ -12,7 +12,7 @@ def execute(action):
     elif action.decision_type() == DecisionType.HOLD:
         Order.hold_order(action.order)
     else:
-        if action.order.order.order_type() == OrderType.CREATE_APPLICATION:
+        if action.order.order_type() == OrderType.CREATE_APPLICATION:
             app = create_application(action)
             app.create(action.order.letter())  # first record for new application
         elif action.order.order_type() == OrderType.POST_LETTER:
@@ -22,14 +22,18 @@ def execute(action):
 
 
 def create_application(action):
-    code = _generate_code(action.order.target)
-    # todo: choose application template and copy it.
-    app = kintone.create_default_application(action.order.target, code)
+    name = action.order.target
+    code = Environment.get_translator().translate(name, "en").replace(" ", "_")
+
+    app_info = kintone.find_similar_applications(name, find_template=True)
+
+    app = None
+    if len(app_info) > 0:
+        app = kintone.copy_application(app_info[0].app_id, name, code)
+    else:
+        app = kintone.create_default_application(name, code)
+
     return app
-
-
-def _generate_code(name):
-    return "application code"
 
 
 def update_application(action):

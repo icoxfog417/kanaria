@@ -37,11 +37,7 @@ def get_kanaria(create_if_not_exist=False):
 
     app = None
     service = Environment.get_kintone_service()
-    def register(a):
-        # register application to database
-        db = Environment.get_db()
-        app_index = ApplicationIndex(a.app_id, Brain.MY_NAME, Brain.MY_USER_NAME)
-        db.save(app_index)
+    register = lambda a: register_application(a.app_id, Brain.MY_NAME, Brain.MY_USER_NAME)
 
     # get from database
     app = get_application(Brain.MY_USER_NAME)
@@ -97,12 +93,12 @@ def create_default_application(name, code):
     from pykintone.application_settings.view import View
     import pykintone.application_settings.form_field as ff
 
-    app = None
     service = Environment.get_kintone_service()
+    result = None
 
     with Administrator(service.account) as admin:
         # create application
-        created = admin.create_application(Brain.MY_NAME)
+        result = admin.create_application(Brain.MY_NAME)
 
         # create form
         fields = [
@@ -117,18 +113,43 @@ def create_default_application(name, code):
         view = View.create("一覧", ["subject", "from_address"])
         admin.view().update(view)
 
-    if app:
-        # register application to database
-        db = Environment.get_db()
-        app_index = ApplicationIndex(app.app_id, name, code)
-        db.save(app_index)
+    if result.ok:
+        app = service.app(result.app_id)
+        register_application(app.app_id, name, code)
+        return app
+    else:
+        return None
 
-    return app
+
+def copy_application(app_id, name, code):
+    service = Environment.get_kintone_service()
+    result = None
+    with service.administration() as admin:
+        result = admin.copy_application(name, app_id)
+
+    if result.ok:
+        register_application(result.app_id, name, code)
+    else:
+        raise Exception("Error occurred when copying the application")
 
 
-def find_similar_applications(name):
+def register_application(app_id, name, code):
+    db = Environment.get_db()
+    app_index = ApplicationIndex(app_id, name, code)
+    db.save(app_index)
+
+
+def find_similar_applications(name, find_template=False):
     from pykintone.application_settings.administrator import Administrator
     service = Environment.get_kintone_service()
     infos = Administrator(service.account).select_app_info(name=name).infos
 
-    return infos
+    filtered = []
+    for i in infos:
+        template = i.name.startswith(Brain.TEMPLATE_HEADER)
+        if find_template and template:
+            filtered.append(i)
+        elif not find_template and not template:
+            filtered.append(i)
+
+    return filtered

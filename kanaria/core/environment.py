@@ -6,6 +6,7 @@ class Environment(object):
         self.kintone_password = ""
         self.database_uri = ""
         self.mail_domain = ""
+        self.mail_api_key = ""
         self.translator_client_id = ""
         self.translator_client_secret = ""
 
@@ -25,7 +26,8 @@ class Environment(object):
                     self.kintone_id = e["login"]["id"]
                     self.kintone_password = e["login"]["password"]
                     self.database_uri = e["database_uri"]
-                    self.mail_domain = e["mail_domain"]
+                    self.mail_domain = e["mail"]["domain"]
+                    self.mail_api_key = e["mail"]["api_key"]
                     self.translator_client_id = e["translator"]["client_id"]
                     self.translator_client_secret = e["translator"]["client_secret"]
             else:
@@ -38,30 +40,12 @@ class Environment(object):
                 if not self.database_uri:
                     self.database_uri = os.environ.get("MONGOHQ_URI", "")
                 self.mail_domain = os.environ.get("MAIL_DOMAIN")
+                self.mail_api_key = os.environ.get("MAIL_API_KEY")
                 self.translator_client_id = os.environ.get("TRANSLATOR_CLIENT_ID")
                 self.translator_client_secret = os.environ.get("TRANSLATOR_CLIENT_SECRET")
 
         except Exception as ex:
             raise Exception("environment is not set. please confirm environment.yaml on your root or environment variables")
-
-        missings = []
-        if not self.kintone_domain:
-            missings.append("kintone domain")
-        if not self.kintone_id:
-            missings.append("kintone login id")
-        if not self.kintone_password:
-            missings.append("kintone login password")
-        if not self.database_uri:
-            missings.append("database uri")
-        if not self.mail_domain:
-            missings.append("mail domain")
-        if not self.translator_client_id:
-            missings.append("translator client_id")
-        if not self.translator_client_secret:
-            missings.append("translator client_secret")
-
-        if len(missings) > 0:
-            raise Exception(", ".join(missings) + " is not set.")
 
     @classmethod
     def get_db(cls):
