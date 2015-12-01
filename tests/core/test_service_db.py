@@ -14,6 +14,7 @@ class ModelExample(object):
     def method(self):
         pass
 
+
 class TestDBService(unittest.TestCase):
 
     def test_serialize(self):
@@ -28,3 +29,9 @@ class TestDBService(unittest.TestCase):
         self.assertTrue(m.date, dic["date"])
         self.assertFalse("_private" in dic)
         self.assertFalse("method" in dic)
+
+    def test_get_collection(self):
+        db = MongoDBService()
+        collection = db.get_collection(ModelExample)
+        self.assertTrue(collection)
+

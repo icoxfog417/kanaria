@@ -8,12 +8,12 @@ class MongoDBService(object):
     KEY_FUNC = "unique_key"
 
     def __init__(self, db_uri=""):
-        self.client = MongoClient(db_uri if db_uri else "mongodb://localhost:27017/")
+        self.client = MongoClient(db_uri if db_uri else "mongodb://localhost:27017/default")
 
     def get_collection(self, cls_or_instance):
         database = self.client.get_default_database()
         collection = self.get_collection_name(cls_or_instance)
-        return self.client[database][collection]
+        return database[collection]
 
     def save(self, instance):
         collection = self.get_collection(instance)

@@ -34,6 +34,8 @@ class Environment(object):
                     self.mail_api_key = yget("mail", "api_key")
                     self.translator_client_id = yget("translator", "client_id")
                     self.translator_client_secret = yget("translator", "client_secret")
+                    if not self.database_uri:
+                        self.database_uri = "mongodb://localhost:27017/kanaria"
             else:
                 self.kintone_domain = os.environ.get("KINTONE_DOMAIN", "")
                 self.kintone_id = os.environ.get("KINTONE_ID", "")
