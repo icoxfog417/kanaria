@@ -21,14 +21,14 @@ def execute(action):
             update_application(action)
 
 
-def create_application(action):
+def create_application(action, enable_copy=True):
     name = action.order.target
     code = Environment.get_translator().translate(name, "en").replace(" ", "_")
 
     app_info = kintone.find_similar_applications(name, find_template=True)
 
     app = None
-    if len(app_info) > 0:
+    if len(app_info) > 0 and enable_copy:
         app = kintone.copy_application(app_info[0].app_id, name, code)
     else:
         app = kintone.create_default_application(name, code)

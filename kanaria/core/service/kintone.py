@@ -98,7 +98,7 @@ def create_default_application(name, code):
 
     with Administrator(service.account) as admin:
         # create application
-        result = admin.create_application(Brain.MY_NAME)
+        result = admin.create_application(name)
 
         # create form
         fields = [
@@ -107,11 +107,15 @@ def create_default_application(name, code):
             ff.BaseFormField.create("SINGLE_LINE_TEXT", "from_address", "報告者"),
             ff.BaseFormField.create("FILE", "attached_files", "添付ファイル")
         ]
-        admin.form().add(fields)
+        update_form = admin.form().add(fields, result.app_id)
 
         # create view
         view = View.create("一覧", ["subject", "from_address"])
-        admin.view().update(view)
+        update_view = admin.view().update(view, result.app_id)
+        if result.ok and update_form.ok and update_view.ok:
+            admin._cached_changes = True
+        else:
+            raise Exception("Error is occurred when creating default application")
 
     if result.ok:
         app = service.app(result.app_id)
@@ -129,6 +133,8 @@ def copy_application(app_id, name, code):
 
     if result.ok:
         register_application(result.app_id, name, code)
+        app = service.app(result.app_id)
+        return app
     else:
         raise Exception("Error occurred when copying the application")
 
@@ -141,6 +147,7 @@ def register_application(app_id, name, code):
 
 def find_similar_applications(name, find_template=False):
     from pykintone.application_settings.administrator import Administrator
+    # todo: have to implements more flexible search
     service = Environment.get_kintone_service()
     infos = Administrator(service.account).select_app_info(name=name).infos
 
