@@ -44,8 +44,14 @@ def interpret(letter):
 
 
 def extract_application_name(text):
-    # todo: implements how to create application name
-    return "name"
+    t = Tokenizer()
+    tokens = t.tokenize(text)
+    words = []
+    for token in tokens:
+        pos = token.part_of_speech.split(',')
+        if pos[0] == '名詞':
+            words.append(token.surface)
+    return ''.join(words)
 
 
 def interpret_operation(text):

@@ -2,13 +2,12 @@ import json
 import falcon
 import cgi
 import io
-import os
 import pprint
-import yaml
 
 import sendgrid
 
 from kanaria.core.model.letter import Letter
+from kanaria.core.environment import Environment
 
 
 class EmailSender(object):
@@ -19,14 +18,11 @@ class EmailSender(object):
         self.message = sendgrid.Mail()
 
     def __get_key_id(self):
-        base_dir = os.path.dirname(__file__)
-        api_key_path = os.path.join(base_dir, 'account.yaml')
-        with open(api_key_path) as f:
-            account = yaml.load(f)
-            return account["api_key"]
+        e = Environment()
+        return e.mail_api_key
 
-    def set_tos(self, *tos):
-        self.message.smtpapi.add_to(list(tos))
+    def set_tos(self, tos):
+        self.message.smtpapi.add_to(tos)
 
     def set_from_address(self, from_address):
         self.message.set_from(u'送信者名 <' + from_address + '>')
@@ -79,7 +75,7 @@ class HelloResource(object):
 
     def send_email(self, subject='', text='', html='', from_address='', to_addresses=()):
         client = EmailSender()
-        client.set_tos(gi*to_addresses)
+        client.set_tos(to_addresses)
         client.set_from_address(from_address)
         client.set_subject(subject)
         client.set_text(text)
@@ -90,7 +86,7 @@ class HelloResource(object):
         query = self.__parse_multipart(req)
         email_info = self.__extract_email_info(query)
         letter = Letter(**email_info)
-        self.send_email(subject='test', text='neko', from_address=letter.to_address[0], to_addresses=[letter.from_address])
+        self.send_email(subject='test', text='neko', from_address=email_info['to_addresses'][0], to_addresses=[email_info['from_address']])
 
 app = falcon.API()
 app.add_route("/quote", HelloResource())
