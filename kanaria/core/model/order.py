@@ -11,7 +11,7 @@ class Order(object):
         self.user_address = user_address
         self.subject = subject
         self.app_id = app_id
-        self.target = ""
+        self.target = target
         self.letter_id = ""
         self._letter = letter
 

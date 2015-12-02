@@ -29,10 +29,11 @@ def interpret(letter):
                 app_id = app.app_id
 
         # get order type
-        if letter.subject:
-            target, order_type = interpret_operation(letter.subject)
-        else:
-            order_type = OrderType.POST_LETTER
+        if app_id:
+            if letter.subject:
+                target, order_type = interpret_operation(letter.subject)
+            else:
+                order_type = OrderType.POST_LETTER
 
     o = Order(order_type, letter.from_address, letter.subject, app_id=app_id, target=target, letter=letter)
     # post letter to kanaria
