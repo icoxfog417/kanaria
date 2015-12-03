@@ -8,14 +8,14 @@ class Letter(kintoneModel):
         self.subject = subject
         self.body = body
         self.from_address = from_address
-        self.to_address = self.__to_list(to_addresses)
+        self.to_addresses = self.__to_list(to_addresses)
         self.attached_files = self.__to_list(attached_files)  #todo: have to convert kintone File format
 
     def from_is(self, name):
         return True if name == self.get_user(self.from_address) else False
 
     def to_includes(self, name):
-        to_users = [self.get_user(a) for a in self.to_address]
+        to_users = [self.get_user(a) for a in self.addresses]
         return True if name in to_users else False
 
     @classmethod

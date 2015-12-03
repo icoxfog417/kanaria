@@ -25,7 +25,7 @@ def interpret(letter):
             target = extract_application_name(letter.subject)
     else:
         # to application's address
-        for a in letter.to_address:
+        for a in letter.addresses:
             app = kintone.get_application_by_code(Letter.get_user(a))
             if app:
                 app_id = app.app_id

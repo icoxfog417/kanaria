@@ -58,6 +58,15 @@ class TestServiceBrainExecutorWithApp(unittest.TestCase):
         result = executor.update_application(action)
         self.assertTrue(result.ok)
 
+    def test_make_reply(self):
+        letter = Letter("報告日を追加してほしい", "", from_address="test_user@kanaria.com", to_addresses="kanaria@kanaria.com")
+        order = Order(OrderType.ADD_ITEM, "test_user", app_id=self.TEST_APP.app_id, letter=letter)
+        action = Action(DecisionType.EXECUTE, order)
+
+        reply = action.make_reply(message="返信を書きました")
+        self.assertTrue(reply.subject)
+        self.assertTrue("test_user@kanaria.com" in reply.to_addresses)
+
     def create_order(self, order_type, subject, body=""):
         from kanaria.core.model.letter import Letter
         from kanaria.core.model.order import Order
