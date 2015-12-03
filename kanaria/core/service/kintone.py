@@ -17,7 +17,9 @@ class kintoneInterface(object):
 
         if app_index:
             app_id = app_index["app_id"]
-            app = self.service.app(app_id)
+            infos = self.service.administration().select_app_info(app_ids=[app_id]).infos
+            if infos:
+                app = self.service.app(app_id)
         return app
 
     def get_application_index(self, app_id):
@@ -35,7 +37,6 @@ class kintoneInterface(object):
 
     def get_kanaria(self, create_if_not_exist=False):
         import os
-        from pykintone.application_settings.administrator import Administrator
         from pykintone.application_settings.view import View
         import pykintone.application_settings.form_field as ff
         from pykintone.structure_field import File
@@ -48,22 +49,21 @@ class kintoneInterface(object):
 
         # check existence
         if not app:
-            infos = Administrator(self.service.account).select_app_info(name=Brain.MY_NAME).infos
+            infos = self.service.administration().select_app_info(name=Brain.MY_NAME).infos
             if len(infos) > 0:
                 app = self.service.app(infos[0].app_id)
                 register(app)
 
         if not app and create_if_not_exist:
             app_id = ""
-            with Administrator(self.service.account) as admin:
+            with self.service.administration() as admin:
                 # create application
                 created = admin.create_application(Brain.MY_NAME)
                 app_id = created.app_id
 
                 # update general information
-                icon = File.upload(os.path.join(os.path.dirname(__file__), "./static/icon.png"))
-                admin.general_settings().update({
-                    "app": created.app_id,
+                icon = File.upload(os.path.join(os.path.dirname(__file__), "./static/icon.png"), admin)
+                set_settings = admin.general_settings().update({
                     "icon": {
                         "type": "FILE",
                         "file": {
@@ -80,11 +80,16 @@ class kintoneInterface(object):
                     ff.BaseFormField.create("SINGLE_LINE_TEXT", "to_address", "To Address"),
                     ff.BaseFormField.create("FILE", "attached_files", "Attached Files")
                 ]
-                admin.form().add(fields)
+                add_fields = admin.form().add(fields)
 
                 # create view
                 view = View.create("LetterList", fields)
-                admin.view().update(view)
+                add_views = admin.view().update(view)
+
+                if set_settings.ok and add_fields.ok and add_views.ok:
+                    admin._cached_changes = True
+                else:
+                    raise Exception("Error is occurred when creating kanaria application")
 
             app = self.service.app(app_id)
             register(app)
@@ -109,11 +114,11 @@ class kintoneInterface(object):
                 ff.BaseFormField.create("SINGLE_LINE_TEXT", "from_address", "報告者"),
                 ff.BaseFormField.create("FILE", "attached_files", "添付ファイル")
             ]
-            update_form = admin.form().add(fields, result.app_id)
+            update_form = admin.form().add(fields)
 
             # create view
             view = View.create("一覧", ["subject", "from_address"])
-            update_view = admin.view().update(view, result.app_id)
+            update_view = admin.view().update(view)
             if result.ok and update_form.ok and update_view.ok:
                 admin._cached_changes = True
             else:
