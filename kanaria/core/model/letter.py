@@ -15,7 +15,7 @@ class Letter(kintoneModel):
         return True if name == self.get_user(self.from_address) else False
 
     def to_includes(self, name):
-        to_users = [self.get_user(a) for a in self.addresses]
+        to_users = [self.get_user(a) for a in self.to_addresses]
         return True if name in to_users else False
 
     @classmethod
