@@ -21,11 +21,13 @@ def interpret(letter):
             app_id =kanaria.app_id
 
         if letter.subject:
-            order_type = OrderType.CREATE_APPLICATION
-            target = extract_application_name(letter.subject)
+            order_type = interpret_allow(letter.subject)
+            if order_type != OrderType.ALLOW:
+                order_type = OrderType.CREATE_APPLICATION
+                target = extract_application_name(letter.subject)
     else:
         # to application's address
-        for a in letter.addresses:
+        for a in letter.to_addresses:
             app = kintone.get_application_by_code(Letter.get_user(a))
             if app:
                 app_id = app.app_id
@@ -54,10 +56,21 @@ def extract_application_name(text):
     return "".join(words)
 
 
+def interpret_allow(text):
+    pattern_for_allow = re.compile(r"OK|いいよ")
+    if pattern_for_allow.search(text.strip()):
+        return OrderType.ALLOW
+    else:
+        return OrderType.NONE
+
+
 def interpret_operation(text):
     operation_type = OrderType.NONE
     pattern_for_add = re.compile(r"追加|入れ")
     pattern_for_del = re.compile(r"削除|消し")
+
+    if interpret_allow(text) == OrderType.ALLOW:
+        return "", OrderType.ALLOW
 
     targets = []
     operations = []

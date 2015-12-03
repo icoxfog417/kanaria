@@ -137,7 +137,7 @@ class TextAnalyzer(object):
                 if m.data_type == DataType.DATE:
                     # check year existence
                     v = v.replace("/", "-")
-                    if len(v.split("-")) < 2:
+                    if len(v.split("-")) <= 2:
                         v = str(datetime.now().year) + "-" + v
 
                 data[f.code] = {

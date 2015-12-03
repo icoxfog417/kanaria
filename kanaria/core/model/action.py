@@ -26,8 +26,9 @@ class Action(object):
         letter = self.order.letter()
         admin_address = Brain.MY_USER_NAME + "@" + env.mail_domain
         from_address = from_user + "@" + env.mail_domain if from_user else admin_address
-        to_address = [a for a in letter.to_addresses if a not in [admin_address, from_address]] + [letter.from_address]
-        letter = Letter(subject=sub, body=msg, from_address=from_address, to_addresses=to_address)
+        to_addresses = [a for a in letter.to_addresses + [letter.from_address] if a != from_address]
+        to_addresses = [a for a in to_addresses if not a.startswith(Brain.MY_USER_NAME) and not a.endswith(env.mail_domain)]
+        letter = Letter(subject=sub, body=msg, from_address=from_address, to_addresses=to_addresses)
         return letter
 
     def decision_type(self):

@@ -17,13 +17,14 @@ class kintoneInterface(object):
 
         if app_index:
             app_id = app_index["app_id"]
-            infos = self.service.administration().select_app_info(app_ids=[app_id]).infos
-            if infos:
+            info = self.service.administration().get_app_info(app_id).info
+            if info:
                 app = self.service.app(app_id)
         return app
 
     def get_application_index(self, app_id):
-        app_index = self.db.get_collection(ApplicationIndex).find_one({"app_id": app_id})
+        app_index_dic = self.db.get_collection(ApplicationIndex).find_one({"app_id": app_id})
+        app_index = ApplicationIndex.deserialize(app_index_dic)
         return app_index
 
     def get_member_addresses(self):

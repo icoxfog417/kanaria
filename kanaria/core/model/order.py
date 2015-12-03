@@ -27,10 +27,13 @@ class Order(object):
         if self._letter:
             lt = self._letter
         elif self.letter_id:
-            from kanaria.core.service.kintone import get_kanaria
-            app = get_kanaria()
+            from kanaria.core.service.kintone import kintoneInterface
+            kintone = kintoneInterface()
+            app = kintone.get_kanaria(create_if_not_exist=False)
             if app:
                 self._letter = app.get(self.letter_id).model(Letter)
+                self._letter.attached_files = self._letter.attached_files if self._letter.attached_files else []
+                self._letter.to_addresses = self._letter.to_addresses if self._letter.to_addresses else []
                 lt = self._letter
         return lt
 
@@ -54,8 +57,10 @@ class Order(object):
         db.save(order)
 
     @classmethod
-    def get_order(cls, user_address):
+    def pop_order(cls, user_address):
         db = Environment.get_db()
-        order_dic = db.get_collection(Order).find_one({"user_address": user_address})
+        order_collection = db.get_collection(Order)
+        order_dic = order_collection.find_one({"user_address": user_address})
         order = cls.deserialize(order_dic)
+        order_collection.delete_many({"user_address": order.user_address})
         return order

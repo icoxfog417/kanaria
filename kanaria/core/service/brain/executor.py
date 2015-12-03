@@ -33,7 +33,7 @@ def execute(action):
                 reply = action.make_reply(message=message)
         else:
             updated = update_application(action)
-            op_txt = "追加" if order_type() == OrderType.ADD_ITEM else "削除"
+            op_txt = "追加" if order_type == OrderType.ADD_ITEM else "削除"
             if updated.ok:
                 message = "{0}を{1}しました".format(action.order.target, op_txt)
                 reply = action.make_reply(message=message)
@@ -101,7 +101,10 @@ def post(action):
     analyzer = TextAnalyzer()
 
     # get form structure
-    fields = app.administration().form().get(app.app_id).fields
+    layouts = app.administration().form().get_layout(app.app_id).layouts
+    fields = []
+    for ly in layouts:
+        fields += ly.fields
     data = analyzer.map_letter_to_field(letter, fields)
 
     # file field

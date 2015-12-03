@@ -21,7 +21,7 @@ def decide(order):
         else:
             decision_type = DecisionType.EXECUTE
     elif order.order_type() == OrderType.ALLOW:
-        o = Order.get_order(order.user_address)
+        o = Order.pop_order(order.user_address)
         decision_type = DecisionType.EXECUTE
     else:
         if order.app_id:

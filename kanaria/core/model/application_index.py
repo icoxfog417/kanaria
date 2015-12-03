@@ -6,3 +6,14 @@ class ApplicationIndex(object):
         self.name = name
         self.code = code
         self.related_uses = []
+
+    @classmethod
+    def deserialize(cls, application_index_dic):
+        aid = application_index_dic
+        instance = ApplicationIndex(
+            aid["app_id"],
+            aid["name"],
+            aid["code"]
+        )
+        instance._id = aid["_id"]
+        return instance
