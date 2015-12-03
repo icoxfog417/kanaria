@@ -146,3 +146,18 @@ class TextAnalyzer(object):
                 bs[i].name = f.code
 
         return data
+
+    def estimate_field_type(self, text):
+        from pykintone.structure import FieldType
+        field_type = FieldType.SINGLE_LINE_TEXT
+
+        if re.search(".+(日|日付)$"):
+            field_type = FieldType.DATE
+        elif re.search(".+(時刻|時間)$"):
+            field_type = FieldType.TIME_STAMP
+        elif re.search(".+(リンク|URL)$"):
+            field_type = FieldType.LINK
+        elif re.search(".+(ファイル|写真)$"):
+            field_type = FieldType.FILE
+
+        return field_type

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 from janome.tokenizer import Tokenizer
 from kanaria.core.service.kintone import kintoneInterface
 from kanaria.core.service.brain import Brain
@@ -46,20 +47,49 @@ def interpret(letter):
 
 
 def extract_application_name(text):
-    t = Tokenizer()
-    tokens = t.tokenize(text)
     words = []
-    for token in tokens:
-        pos = token.part_of_speech.split(',')
-        if pos[0] == '名詞':
-            words.append(token.surface)
-    return ''.join(words)
+    for t in _tokenize(text):
+        if t.pos[0] == "名詞":
+            words.append(t.surface)
+    return "".join(words)
 
 
 def interpret_operation(text):
-    # todo: implements how to interpret order from text
-    return "field_name", OrderType.ADD_ITEM
+    operation_type = OrderType.NONE
+    pattern_for_add = re.compile(r"追加|入れ")
+    pattern_for_del = re.compile(r"削除|消し")
+
+    targets = []
+    operations = []
+    target_part = True
+    for t in _tokenize(text):
+        if t.pos[0] == "助詞" and t.pos[1] in ["格助詞", "係助詞", "副助詞"]:
+            target_part = False
+            continue
+        else:
+            array = targets if target_part else operations
+            if t.pos[0] == "名詞":
+                array.append(t.surface)
+            elif not target_part and t.pos[0] == "動詞":
+                array.append(t.surface)
+
+    target = "".join(targets)
+    operation = "".join(operations)
+
+    if pattern_for_add.search(operation):
+        operation_type = OrderType.ADD_ITEM
+    elif pattern_for_del.search(operation):
+        operation_type = OrderType.DELETE_ITEM
+
+    return target, operation_type
 
 
-def interpret_content(letter):
-    pass
+def _tokenize(text):
+    from collections import namedtuple
+    Token = namedtuple("Token", ["t", "surface", "pos"])
+
+    t = Tokenizer()
+    tokens = t.tokenize(text)
+    for t in tokens:
+        nt = Token(t, t.surface, t.part_of_speech.split(","))
+        yield nt

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from kanaria.core.service.kintone import kintoneInterface
+from kanaria.core.service.brain.analyzer import TextAnalyzer
 from kanaria.core.service.brain.mind_types import OrderType, DecisionType
 from kanaria.core.model.order import Order
 from kanaria.core.model.action import Action
@@ -31,7 +32,15 @@ def execute(action):
                 message = "ごめんなさい、データの登録に失敗しちゃいました。。。このメッセージを担当の人に伝えてください。\n{0}".format(created.error.message)
                 reply = action.make_reply(message=message)
         else:
-            update_application(action)
+            updated = update_application(action)
+            op_txt = "追加" if order_type() == OrderType.ADD_ITEM else "削除"
+            if updated.ok:
+                message = "{0}を{1}しました".format(action.order.target, op_txt)
+                reply = action.make_reply(message=message)
+            else:
+                message = "ごめんなさい、{0}の{1}に失敗しました。。。このメッセージを担当の人に伝えてください。\n{2}".format(action.order.target, op_txt, updated.error.message)
+                reply = action.make_reply(message=message)
+
     else:
         reply = action.make_reply()
 
@@ -60,14 +69,32 @@ def create_application(action, enable_copy=True):
 
 
 def update_application(action):
-    app_id = action.order.app_id
+    from kanaria.core.environment import Environment
+
+    kintone = kintoneInterface()
+    order_type = action.order.order_type()
     field_name = action.order.target
-    pass
+
+    app = kintone.service.app(action.order.app_id)
+    result = None
+    with app.administration().form() as admin:
+        if order_type == OrderType.ADD_ITEM:
+            import pykintone.application_settings.form_field as ff
+            analyzer = TextAnalyzer()
+            field_type = analyzer.estimate_field_type(field_name)
+            field_code = Environment.get_translator(kintone._env).translate(field_name, "en").replace(" ", "_")
+            f = ff.BaseFormField.create(field_type, field_code, field_name)
+            result = admin.add(f)
+        else:
+            fields = admin.get().fields
+            target = [f for f in fields if f.label == field_name]
+            if len(target) > 0:
+                result = admin.delete(target[0])
+
+    return result
 
 
 def post(action):
-    from kanaria.core.service.brain.analyzer import TextAnalyzer
-
     ks = kintoneInterface()
     app = ks.service.app(action.order.app_id)
     letter = action.order.letter()
