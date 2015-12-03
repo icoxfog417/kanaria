@@ -2,7 +2,7 @@ Cython==0.23.4
 Janome==0.2.6
 PyYAML==3.11
 falcon==0.3.0
-pykintone==0.3.2
+pykintone==0.3.3
 pymongo==3.1.1
 pyoxford==0.3.0
 python-mimeparse==0.1.4
