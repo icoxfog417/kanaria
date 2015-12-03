@@ -24,8 +24,10 @@ def decide(order):
         o = Order.get_order(order.user_address)
         decision_type = DecisionType.EXECUTE
     else:
-        # not consider yet
-        decision_type = DecisionType.EXECUTE
+        if order.app_id:
+            decision_type = DecisionType.EXECUTE
+        else:
+            message = "このアドレスで登録されているアプリケーションが見つかりません。"
 
     a = Action(decision_type, o, message)
     return a

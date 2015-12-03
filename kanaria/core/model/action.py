@@ -18,6 +18,7 @@ class Action(object):
 
     def make_reply(self, subject="", message="", from_user=""):
         msg = message if message else self.message
+        sub = subject if subject else "Re: " + self.order.letter().subject
         if not msg:
             return None
 
