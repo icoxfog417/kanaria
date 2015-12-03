@@ -1,4 +1,5 @@
 from pykintone.model import kintoneModel
+from pykintone.structure_field import File
 
 
 class Letter(kintoneModel):
@@ -9,7 +10,7 @@ class Letter(kintoneModel):
         self.body = body
         self.from_address = from_address
         self.to_addresses = self.__to_list(to_addresses)
-        self.attached_files = self.__to_list(attached_files)  #todo: have to convert kintone File format
+        self.attached_files = self.__to_list(attached_files)
 
     def from_is(self, name):
         return True if name == self.get_user(self.from_address) else False

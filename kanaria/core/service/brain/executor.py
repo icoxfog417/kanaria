@@ -52,7 +52,7 @@ def create_application(action, enable_copy=True):
 
     kintone = kintoneInterface()
     name = action.order.target
-    code = Environment.get_translator(kintone._env).translate(name, "en").replace(" ", "_")
+    code = Environment.get_translator(kintone._env).translate(name, "en").replace(" ", "_").lower()
     app_info = kintone.find_similar_applications(name, find_template=True)
 
     app = None
@@ -111,11 +111,12 @@ def post(action):
     file_field = [f for f in fields if f.field_type == "FILE"]
     if len(file_field) > 0 and len(letter.attached_files) > 0:
         from pykintone.structure_field import File
-        f = File.upload(letter.attached_files[0], app)
+        at = letter.attached_files[0]
+        f = File.upload(at["content"], app, file_name=at["filename"])
         data[file_field[0].code] = {
-            "value": {
+            "value": [{
                 "fileKey": f.file_key
-            }
+            }]
         }
 
     result = app.create(data)

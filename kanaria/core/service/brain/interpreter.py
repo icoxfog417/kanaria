@@ -42,8 +42,10 @@ def interpret(letter):
     o = Order(order_type, letter.from_address, app_id=app_id, target=target, letter=letter)
     # post letter to kanaria
     if kanaria:
-        created = kanaria.create(letter)
-        o.letter_id = created.record_id
+        # todo have to support attached file
+        if len(letter.attached_files) == 0:
+            created = kanaria.create(letter)
+            o.letter_id = created.record_id
 
     return o
 
