@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import kanaria.core.service.kintone as kintone
+from kanaria.core.service.kintone import kintoneInterface
 from kanaria.core.service.brain.mind_types import OrderType, DecisionType
 from kanaria.core.model.order import Order
 from kanaria.core.model.action import Action
@@ -11,9 +11,11 @@ def decide(order):
     message = ""
 
     if order.order_type() == OrderType.CREATE_APPLICATION:
+        kintone = kintoneInterface()
         infos = kintone.find_similar_applications(order.target)
         if len(infos) > 0:
             decision_type = DecisionType.HOLD
+            Order.hold_order(o)
             names = [info.name for info in infos][:2]
             message = "{0}などの似ているアプリケーションがありますがよろしいですか？".format("、".join(names))
         else:

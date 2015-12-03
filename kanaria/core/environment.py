@@ -54,23 +54,23 @@ class Environment(object):
             raise Exception("environment is not set. please confirm environment.yaml on your root or environment variables")
 
     @classmethod
-    def get_db(cls):
+    def get_db(cls, env=None):
         from kanaria.core.service.db import MongoDBService
-        env = Environment()
+        env = env if env else Environment()
         return MongoDBService(env.database_uri)
 
     @classmethod
-    def get_kintone_service(cls):
+    def get_kintone_service(cls, env=None):
         from pykintone.account import Account, kintoneService
-        env = Environment()
+        env = env if env else Environment()
         account = Account(env.kintone_domain, env.kintone_id, env.kintone_password)
         service = kintoneService(account)
         return service
 
     @classmethod
-    def get_translator(cls):
+    def get_translator(cls, env=None):
         import pyoxford
-        env = Environment()
+        env = env if env else Environment()
         translator = pyoxford.translator(env.translator_client_id, env.translator_client_secret)
         return translator
 

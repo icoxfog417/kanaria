@@ -18,12 +18,6 @@ class Letter(kintoneModel):
         to_users = [self.get_user(a) for a in self.to_address]
         return True if name in to_users else False
 
-    def make_reply(self, name):
-        my_address = [a for a in self.to_address if self.get_user(a) == name][0]
-        to_address = [a for a in self.to_address if a != my_address] + [self.from_address]
-        letter = Letter(subject="Re: " + self.subject, from_address=my_address, to_addresses=to_address)
-        return letter
-
     @classmethod
     def __to_list(cls, item):
         if isinstance(item, (list, tuple)):

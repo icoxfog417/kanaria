@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from janome.tokenizer import Tokenizer
-import kanaria.core.service.kintone as kintone
+from kanaria.core.service.kintone import kintoneInterface
 from kanaria.core.service.brain import Brain
 from kanaria.core.service.brain.mind_types import OrderType
 from kanaria.core.model.letter import Letter
@@ -8,6 +8,7 @@ from kanaria.core.model.order import Order
 
 
 def interpret(letter):
+    kintone = kintoneInterface()
     order_type = OrderType.NONE
     app_id = ""
     target = ""
@@ -24,7 +25,7 @@ def interpret(letter):
     else:
         # to application's address
         for a in letter.to_address:
-            app = kintone.get_application(Letter.get_user(a))
+            app = kintone.get_application_by_code(Letter.get_user(a))
             if app:
                 app_id = app.app_id
 
@@ -35,7 +36,7 @@ def interpret(letter):
             else:
                 order_type = OrderType.POST_LETTER
 
-    o = Order(order_type, letter.from_address, letter.subject, app_id=app_id, target=target, letter=letter)
+    o = Order(order_type, letter.from_address, app_id=app_id, target=target, letter=letter)
     # post letter to kanaria
     if kanaria:
         created = kanaria.create(letter)

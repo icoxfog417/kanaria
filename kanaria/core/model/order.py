@@ -5,11 +5,10 @@ from kanaria.core.model.letter import Letter
 
 class Order(object):
 
-    def __init__(self, order_type_text, user_address, subject, app_id="", target="", letter=None):
+    def __init__(self, order_type_text, user_address, app_id="", target="", letter=None):
         self._id = None
         self.order_type_text = ""
         self.user_address = user_address
-        self.subject = subject
         self.app_id = app_id
         self.target = target
         self.letter_id = ""
@@ -40,7 +39,6 @@ class Order(object):
         instance = Order(
             order_dic["order_type_text"],
             order_dic["user_address"],
-            order_dic["subject"],
             app_id=order_dic["app_id"],
             target=order_dic["target"]
         )
