@@ -1,48 +1,57 @@
 import json
-import falcon
 import cgi
 import io
 import pprint
 
 import sendgrid
 
-from kanaria.core.model.letter import Letter
 from kanaria.core.environment import Environment
+from kanaria.core.model.letter import Letter
 
 
-class EmailSender(object):
+class Email(object):
 
     def __init__(self):
         key_id = self.__get_key_id()
         self.sg = sendgrid.SendGridClient(key_id)
-        self.message = sendgrid.Mail()
+        self.message = None
 
     def __get_key_id(self):
         e = Environment()
         return e.mail_api_key
 
-    def set_tos(self, tos):
+    def __set_tos(self, tos):
         self.message.smtpapi.add_to(tos)
 
-    def set_from_address(self, from_address):
+    def __set_from_address(self, from_address):
         self.message.set_from(u'送信者名 <' + from_address + '>')
 
-    def set_subject(self, text):
+    def __set_subject(self, text):
         self.message.set_subject(text)
 
-    def set_text(self, text):
+    def __set_text(self, text):
         self.message.set_text(text)
 
-    def set_html(self, html_text):
+    def __set_html(self, html_text):
         self.message.set_html(html_text)
 
-    def send(self):
+    def get_letter(self, req):
+        query = self.__parse_multipart(req)
+        email_info = self.__extract_email_info(query)
+        letter = Letter(**email_info)
+
+        return letter
+
+    def send(self, subject='', text='', html='', from_address='', to_addresses=()):
+        self.message = sendgrid.Mail()
+        self.__set_tos(to_addresses)
+        self.__set_from_address(from_address)
+        self.__set_subject(subject)
+        self.__set_text(text)
+        self.__set_html(html)
         status, msg = self.sg.send(self.message)
         print(status)
         print(msg)
-
-
-class HelloResource(object):
 
     def __parse_multipart(self, req):
         ctype, pdict = cgi.parse_header(req.content_type)
@@ -51,13 +60,13 @@ class HelloResource(object):
         rfile = io.BytesIO(payload)
         if ctype == 'multipart/form-data':
             query = cgi.parse_multipart(rfile, pdict)
-            # pprint.pprint(query)
+            pprint.pprint(query)
             return query
         else:
             raise Exception("The content-type is unsupported.")
 
     def __extract_email_info(self, query):
-        email_info	= {'subject': '', 'body': '', 'from_address': '', 'to_addresses': [], 'attached_files': []}
+        email_info = {'subject': '', 'body': '', 'from_address': '', 'to_addresses': [], 'attached_files': []}
         charsets = json.loads(query['charsets'][0].decode('utf-8'))
         envelope = json.loads(query['envelope'][0].decode('utf-8'))
         email_info['from_address'] = envelope['from']
@@ -72,27 +81,3 @@ class HelloResource(object):
                 email_info['attached_files'].append(attachment)
 
         return email_info
-
-    def send_email(self, subject='', text='', html='', from_address='', to_addresses=()):
-        client = EmailSender()
-        client.set_tos(to_addresses)
-        client.set_from_address(from_address)
-        client.set_subject(subject)
-        client.set_text(text)
-        client.set_html(html)
-        client.send()
-
-    def on_post(self, req, resp):
-        query = self.__parse_multipart(req)
-        email_info = self.__extract_email_info(query)
-        letter = Letter(**email_info)
-        self.send_email(subject='test', text='neko', from_address=email_info['to_addresses'][0], to_addresses=[email_info['from_address']])
-
-app = falcon.API()
-app.add_route("/quote", HelloResource())
-
-
-if __name__ == "__main__":
-    from wsgiref import simple_server
-    httpd = simple_server.make_server("127.0.0.1", 8000, app)
-    httpd.serve_forever()
