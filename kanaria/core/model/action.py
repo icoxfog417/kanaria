@@ -18,16 +18,16 @@ class Action(object):
 
     def make_reply(self, subject="", message="", from_user=""):
         msg = message if message else self.message
-        sub = subject if subject else "Re: " + self.order.letter().subject
         if not msg:
             return None
 
+        sub = subject if subject else "Re: " + self.order.letter().subject
         env = Environment()
         letter = self.order.letter()
         admin_address = Brain.MY_USER_NAME + "@" + env.mail_domain
         from_address = from_user + "@" + env.mail_domain if from_user else admin_address
         to_address = [a for a in letter.to_address if a not in [admin_address, from_address]]
-        letter = Letter(subject=subject, body=msg, from_address=from_address, to_addresses=to_address)
+        letter = Letter(subject=sub, body=msg, from_address=from_address, to_addresses=to_address)
         return letter
 
     def decision_type(self):
