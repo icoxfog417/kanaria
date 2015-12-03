@@ -45,6 +45,19 @@ class TestServiceBrainExecutorWithApp(unittest.TestCase):
         result = executor.post(action)
         self.assertTrue(result.ok)
 
+    def test_update_item(self):
+        letter = Letter("報告日を追加してほしい", "")
+        order = Order(OrderType.ADD_ITEM, "test_user", app_id=self.TEST_APP.app_id, letter=letter)
+        order.target = "報告日"
+        action = Action(DecisionType.EXECUTE, order)
+
+        result = executor.update_application(action)
+        self.assertTrue(result.ok)
+
+        order.order_type_text = OrderType.DELETE_ITEM.value
+        result = executor.update_application(action)
+        self.assertTrue(result.ok)
+
     def create_order(self, order_type, subject, body=""):
         from kanaria.core.model.letter import Letter
         from kanaria.core.model.order import Order
