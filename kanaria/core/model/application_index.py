@@ -7,6 +7,9 @@ class ApplicationIndex(object):
         self.code = code
         self.related_uses = []
 
+    def unique_key(self):
+        return self.code
+
     @classmethod
     def deserialize(cls, application_index_dic):
         aid = application_index_dic

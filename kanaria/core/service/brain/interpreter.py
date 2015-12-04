@@ -36,7 +36,7 @@ def interpret(letter):
         if app_id:
             if letter.subject:
                 target, order_type = interpret_operation(letter.subject)
-            else:
+            if order_type == OrderType.NONE:
                 order_type = OrderType.POST_LETTER
 
     o = Order(order_type, letter.from_address, app_id=app_id, target=target, letter=letter)

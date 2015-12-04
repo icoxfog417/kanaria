@@ -23,7 +23,7 @@ class MongoDBService(object):
             _id = instance._id
         elif hasattr(instance, self.KEY_FUNC):
             key = getattr(instance, self.KEY_FUNC)()
-            same = collection.find_one({self.KEY_FUNC, key})
+            same = collection.find_one({self.KEY_FUNC: key})
             if same:
                 _id = same._id
 

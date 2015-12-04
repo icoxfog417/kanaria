@@ -27,19 +27,19 @@ def execute(action):
                 message = "ごめんなさい、アプリケーションの作成に失敗しちゃいました。。。"
                 reply = action.make_reply(message=message)
         elif order_type == OrderType.POST_LETTER:
-            created = post(action)
+            created, app_index = post(action)
             if not created.ok:
                 message = "ごめんなさい、データの登録に失敗しちゃいました。。。このメッセージを担当の人に伝えてください。\n{0}".format(created.error.message)
-                reply = action.make_reply(message=message)
+                reply = action.make_reply(message=message, from_user=app_index.code)
         else:
-            updated = update_application(action)
+            updated, app_index = update_application(action)
             op_txt = "追加" if order_type == OrderType.ADD_ITEM else "削除"
             if updated.ok:
                 message = "{0}を{1}しました".format(action.order.target, op_txt)
-                reply = action.make_reply(message=message)
+                reply = action.make_reply(message=message, from_user=app_index.code)
             else:
                 message = "ごめんなさい、{0}の{1}に失敗しました。。。このメッセージを担当の人に伝えてください。\n{2}".format(action.order.target, op_txt, updated.error.message)
-                reply = action.make_reply(message=message)
+                reply = action.make_reply(message=message, from_user=app_index.code)
 
     else:
         reply = action.make_reply()
@@ -76,6 +76,7 @@ def update_application(action):
     field_name = action.order.target
 
     app = kintone.service.app(action.order.app_id)
+    app_index = kintone.get_application_index(app.app_id)
     result = None
     with app.administration().form() as admin:
         if order_type == OrderType.ADD_ITEM:
@@ -91,12 +92,13 @@ def update_application(action):
             if len(target) > 0:
                 result = admin.delete(target[0])
 
-    return result
+    return result, app_index
 
 
 def post(action):
     ks = kintoneInterface()
     app = ks.service.app(action.order.app_id)
+    app_index = ks.get_application_index(app.app_id)
     letter = action.order.letter()
     analyzer = TextAnalyzer()
 
@@ -120,4 +122,4 @@ def post(action):
         }
 
     result = app.create(data)
-    return result
+    return result, app_index
